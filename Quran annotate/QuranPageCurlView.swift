@@ -10,6 +10,28 @@ import UIKit
 import PDFKit
 import PencilKit
 
+// Singleton pour gérer le PKToolPicker
+class ToolPickerManager {
+    static let shared = ToolPickerManager()
+    private(set) var toolPicker: PKToolPicker
+
+    private init() {
+        // Créer une instance unique de PKToolPicker
+        toolPicker = PKToolPicker()
+    }
+
+    func setupToolPicker(for canvasView: PKCanvasView, in window: UIWindow) {
+        toolPicker.addObserver(canvasView)
+        toolPicker.setVisible(true, forFirstResponder: canvasView)
+        canvasView.becomeFirstResponder()
+    }
+
+    func hideToolPicker(for canvasView: PKCanvasView) {
+        toolPicker.setVisible(false, forFirstResponder: canvasView)
+        canvasView.resignFirstResponder()
+    }
+}
+
 // ViewController vide pour accompagner la page 0
 class EmptyPageViewController: UIViewController {
     override func viewDidLoad() {
@@ -28,6 +50,7 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
     var onPageChanged: ((Int) -> Void)?
     var onDrawingsChanged: (([Int: PKDrawing]) -> Void)?
     var currentPageIndex: Int = 0
+    var currentTool: PKTool?
 
     init(pdfDocument: PDFDocument, isLandscape: Bool) {
         self.pdfDocument = pdfDocument
@@ -120,12 +143,17 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
             drawing: drawings[pageIndex] ?? PKDrawing(),
             isAnnotationMode: isAnnotationMode
         )
-        
+
         pageVC.onDrawingChanged = { [weak self] pageIndex, drawing in
             self?.drawings[pageIndex] = drawing
             self?.onDrawingsChanged?(self?.drawings ?? [:])
         }
-        
+
+        // Appliquer l'outil actuel si disponible
+        if let tool = currentTool {
+            pageVC.setTool(tool)
+        }
+
         return pageVC
     }
 
@@ -176,6 +204,20 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
             for vc in visibleVCs {
                 if let pageVC = vc as? PDFPageWithAnnotationViewController {
                     pageVC.clearDrawing()
+                }
+            }
+        }
+    }
+
+    func restoreTool(_ tool: PKTool) {
+        // Sauvegarder l'outil actuel
+        currentTool = tool
+
+        // Restaurer l'outil sur toutes les pages visibles
+        if let visibleVCs = viewControllers {
+            for vc in visibleVCs {
+                if let pageVC = vc as? PDFPageWithAnnotationViewController {
+                    pageVC.setTool(tool)
                 }
             }
         }
@@ -372,12 +414,9 @@ class PDFPageWithAnnotationViewController: UIViewController {
         super.viewDidAppear(animated)
 
         if let window = view.window {
-            let toolPicker = PKToolPicker.shared(for: window)
-            toolPicker?.addObserver(canvasView)
-
+            // Utiliser le singleton ToolPickerManager
             if isAnnotationMode {
-                canvasView.becomeFirstResponder()
-                toolPicker?.setVisible(true, forFirstResponder: canvasView)
+                ToolPickerManager.shared.setupToolPicker(for: canvasView, in: window)
             }
         }
     }
@@ -406,17 +445,23 @@ class PDFPageWithAnnotationViewController: UIViewController {
         return canvasView.drawing
     }
 
+    func getCurrentTool() -> PKTool? {
+        return canvasView.tool
+    }
+
+    func setTool(_ tool: PKTool) {
+        canvasView.tool = tool
+    }
+
     func updateAnnotationMode(_ enabled: Bool) {
         isAnnotationMode = enabled
         canvasView.allowPassthrough = !enabled
 
-        if let window = view.window, let toolPicker = PKToolPicker.shared(for: window) {
+        if let window = view.window {
             if enabled {
-                canvasView.becomeFirstResponder()
-                toolPicker.setVisible(true, forFirstResponder: canvasView)
+                ToolPickerManager.shared.setupToolPicker(for: canvasView, in: window)
             } else {
-                toolPicker.setVisible(false, forFirstResponder: canvasView)
-                canvasView.resignFirstResponder()
+                ToolPickerManager.shared.hideToolPicker(for: canvasView)
             }
         }
     }
@@ -441,13 +486,21 @@ struct QuranPageCurlView: UIViewControllerRepresentable {
     class Coordinator: ObservableObject {
         var viewController: QuranPageCurlViewController?
         var drawings: Binding<[Int: PKDrawing]>?
+        var savedTool: PKTool?
+        var savedIsAnnotationMode: Bool = false
 
         func saveCurrentDrawings() {
             if let vc = viewController, let visibleVCs = vc.viewControllers {
+                // Sauvegarder l'outil actuel
                 for visibleVC in visibleVCs {
                     if let pageVC = visibleVC as? PDFPageWithAnnotationViewController {
+                        // Sauvegarder les dessins
                         let drawing = pageVC.getCurrentDrawing()
                         vc.drawings[pageVC.pageIndex] = drawing
+
+                        // Sauvegarder l'outil et le mode annotation
+                        savedTool = pageVC.getCurrentTool()
+                        savedIsAnnotationMode = vc.isAnnotationMode
                     }
                 }
                 // Mettre à jour le binding de manière synchrone
@@ -498,7 +551,17 @@ struct QuranPageCurlView: UIViewControllerRepresentable {
 
         // Assurer que le mode annotation est correctement appliqué après la création
         DispatchQueue.main.async {
+            // Restaurer le mode annotation sauvegardé si disponible
+            if context.coordinator.savedIsAnnotationMode {
+                vc.isAnnotationMode = context.coordinator.savedIsAnnotationMode
+            }
+
             vc.updateAnnotationModeForAllPages()
+
+            // Restaurer l'outil sauvegardé après rotation
+            if let savedTool = context.coordinator.savedTool {
+                vc.restoreTool(savedTool)
+            }
         }
 
         return vc
