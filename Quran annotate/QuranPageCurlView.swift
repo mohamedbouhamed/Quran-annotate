@@ -64,52 +64,56 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
         let viewControllers: [UIViewController]
 
         if isLandscape {
-            // En paysage : 2 pages côte à côte (comme un livre arabe ouvert)
-            // Ajuster pour être sur une page paire (début de paire)
-            let adjustedIndex = (pageIndex / 2) * 2  // Arrondir à 0, 2, 4, 6...
+            // En paysage : logique livre arabe
+            // Page 0 (couverture) : seule, centrée
+            // Pages suivantes : par paires (1,2), (3,4), (5,6)...
+            // Dans chaque paire : impair à droite, pair à gauche
 
-            // Créer 2 view controllers
-            // IMPORTANT: Avec semanticContentAttribute = .forceRightToLeft:
-            // UIKit INVERSE l'ordre de l'array pour l'affichage RTL
-            // Pour avoir: [page droite | page gauche] à l'écran
-            // Il faut fournir: [page gauche, page droite] dans l'array
-            // Donc ordre = [page impaire (gauche), page paire (droite)]
-            var controllers: [UIViewController] = []
+            if pageIndex == 0 {
+                // Page 0 seule (couverture)
+                viewControllers = createViewControllers(startingAt: 0, count: 1)
+            } else {
+                // Paires : (1,2), (3,4), (5,6)...
+                // Calculer le début de la paire : pour index impair, garder tel quel ; pour index pair > 0, prendre index-1
+                let pairStart = pageIndex % 2 == 1 ? pageIndex : pageIndex - 1
 
-            let rightPageIndex = adjustedIndex      // Page paire (0, 2, 4...) → droite
-            let leftPageIndex = adjustedIndex + 1   // Page impaire (1, 3, 5...) → gauche
+                var controllers: [UIViewController] = []
 
-            // PREMIER dans l'array: Page de GAUCHE (index impair)
-            // Sera affichée à gauche après inversion RTL
-            if leftPageIndex < pdfDocument.pageCount, let leftPage = pdfDocument.page(at: leftPageIndex) {
-                let leftVC = PDFPageWithAnnotationViewController(
-                    page: leftPage,
-                    pageIndex: leftPageIndex,
-                    drawing: drawings[leftPageIndex] ?? PKDrawing(),
-                    isAnnotationMode: isAnnotationMode
-                )
-                leftVC.onDrawingChanged = { [weak self] drawing in
-                    self?.drawings[leftPageIndex] = drawing
+                let rightPageIndex = pairStart      // Impair (1, 3, 5...) → droite
+                let leftPageIndex = pairStart + 1   // Pair (2, 4, 6...) → gauche
+
+                // Array inversé pour RTL: [leftVC, rightVC]
+
+                // PREMIER dans l'array: Page de GAUCHE (index pair)
+                if leftPageIndex < pdfDocument.pageCount, let leftPage = pdfDocument.page(at: leftPageIndex) {
+                    let leftVC = PDFPageWithAnnotationViewController(
+                        page: leftPage,
+                        pageIndex: leftPageIndex,
+                        drawing: drawings[leftPageIndex] ?? PKDrawing(),
+                        isAnnotationMode: isAnnotationMode
+                    )
+                    leftVC.onDrawingChanged = { [weak self] drawing in
+                        self?.drawings[leftPageIndex] = drawing
+                    }
+                    controllers.append(leftVC)
                 }
-                controllers.append(leftVC)
-            }
 
-            // DEUXIÈME dans l'array: Page de DROITE (index pair)
-            // Sera affichée à droite après inversion RTL
-            if let rightPage = pdfDocument.page(at: rightPageIndex) {
-                let rightVC = PDFPageWithAnnotationViewController(
-                    page: rightPage,
-                    pageIndex: rightPageIndex,
-                    drawing: drawings[rightPageIndex] ?? PKDrawing(),
-                    isAnnotationMode: isAnnotationMode
-                )
-                rightVC.onDrawingChanged = { [weak self] drawing in
-                    self?.drawings[rightPageIndex] = drawing
+                // DEUXIÈME dans l'array: Page de DROITE (index impair)
+                if let rightPage = pdfDocument.page(at: rightPageIndex) {
+                    let rightVC = PDFPageWithAnnotationViewController(
+                        page: rightPage,
+                        pageIndex: rightPageIndex,
+                        drawing: drawings[rightPageIndex] ?? PKDrawing(),
+                        isAnnotationMode: isAnnotationMode
+                    )
+                    rightVC.onDrawingChanged = { [weak self] drawing in
+                        self?.drawings[rightPageIndex] = drawing
+                    }
+                    controllers.append(rightVC)
                 }
-                controllers.append(rightVC)
-            }
 
-            viewControllers = controllers
+                viewControllers = controllers
+            }
         } else {
             // En portrait : 1 page
             viewControllers = createViewControllers(startingAt: pageIndex, count: 1)
@@ -173,15 +177,28 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
               let pdfDocument = pdfDocument else { return nil }
 
         if isLandscape {
-            // En mode paysage avec 2 pages et spine au milieu (RTL)
-            // Avec RTL et spine .mid :
-            // - Si on reçoit un index PAIR (page de droite), on retourne l'index IMPAIR adjacent (page de gauche de la même paire)
-            // - Si on reçoit un index IMPAIR (page de gauche), on retourne l'index PAIR de la paire suivante
+            // Logique livre arabe avec page 0 seule
+            // Page 0 : seule (couverture)
+            // Paires : (1,2), (3,4), (5,6)... où impair=droite, pair=gauche
+            // viewControllerBefore = avancer (pour RTL)
 
             let currentIndex = pageVC.pageIndex
 
-            if currentIndex % 2 == 0 {
-                // Page PAIRE (droite) → retourner la page IMPAIRE adjacente (gauche, même paire)
+            if currentIndex == 0 {
+                // Page 0 (couverture) → aller à la page 1 (début de la première paire)
+                guard let page1 = pdfDocument.page(at: 1) else { return nil }
+                let vc1 = PDFPageWithAnnotationViewController(
+                    page: page1,
+                    pageIndex: 1,
+                    drawing: drawings[1] ?? PKDrawing(),
+                    isAnnotationMode: isAnnotationMode
+                )
+                vc1.onDrawingChanged = { [weak self] drawing in
+                    self?.drawings[1] = drawing
+                }
+                return vc1
+            } else if currentIndex % 2 == 1 {
+                // Page IMPAIRE (droite, ex: 1,3,5) → retourner page PAIRE adjacente (gauche, même paire)
                 let leftIndex = currentIndex + 1
                 guard leftIndex < pdfDocument.pageCount,
                       let leftPage = pdfDocument.page(at: leftIndex) else { return nil }
@@ -197,7 +214,7 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
                 }
                 return leftVC
             } else {
-                // Page IMPAIRE (gauche) → retourner la page PAIRE de la paire suivante (droite)
+                // Page PAIRE (gauche, ex: 2,4,6) → retourner page IMPAIRE suivante (droite, paire suivante)
                 let nextRightIndex = currentIndex + 1
                 guard nextRightIndex < pdfDocument.pageCount,
                       let nextRightPage = pdfDocument.page(at: nextRightIndex) else { return nil }
@@ -229,17 +246,28 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
               let pdfDocument = pdfDocument else { return nil }
 
         if isLandscape {
-            // En mode paysage avec 2 pages et spine au milieu (RTL)
-            // Avec RTL et spine .mid :
-            // - Si on reçoit un index IMPAIR (page de gauche), on retourne l'index PAIR adjacent (page de droite de la même paire)
-            // - Si on reçoit un index PAIR (page de droite), on retourne l'index IMPAIR de la paire précédente
+            // Logique livre arabe avec page 0 seule
+            // viewControllerAfter = reculer (pour RTL)
 
             let currentIndex = pageVC.pageIndex
 
-            if currentIndex % 2 == 1 {
-                // Page IMPAIRE (gauche) → retourner la page PAIRE adjacente (droite, même paire)
+            if currentIndex == 1 {
+                // Page 1 (première page de texte) → retourner à la page 0 (couverture)
+                guard let page0 = pdfDocument.page(at: 0) else { return nil }
+                let vc0 = PDFPageWithAnnotationViewController(
+                    page: page0,
+                    pageIndex: 0,
+                    drawing: drawings[0] ?? PKDrawing(),
+                    isAnnotationMode: isAnnotationMode
+                )
+                vc0.onDrawingChanged = { [weak self] drawing in
+                    self?.drawings[0] = drawing
+                }
+                return vc0
+            } else if currentIndex % 2 == 0 {
+                // Page PAIRE (gauche, ex: 2,4,6) → retourner page IMPAIRE adjacente (droite, même paire)
                 let rightIndex = currentIndex - 1
-                guard rightIndex >= 0,
+                guard rightIndex >= 1,
                       let rightPage = pdfDocument.page(at: rightIndex) else { return nil }
 
                 let rightVC = PDFPageWithAnnotationViewController(
@@ -253,9 +281,9 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
                 }
                 return rightVC
             } else {
-                // Page PAIRE (droite) → retourner la page IMPAIRE de la paire précédente (gauche)
+                // Page IMPAIRE > 1 (droite, ex: 3,5,7) → retourner page PAIRE précédente (gauche, paire précédente)
                 let prevLeftIndex = currentIndex - 1
-                guard prevLeftIndex >= 0,
+                guard prevLeftIndex >= 1,
                       let prevLeftPage = pdfDocument.page(at: prevLeftIndex) else { return nil }
 
                 let leftVC = PDFPageWithAnnotationViewController(
@@ -284,14 +312,16 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
 
     func pageViewController(_ pageViewController: UIPageViewController, didFinishAnimating finished: Bool, previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
         if completed {
-            // En mode paysage, on a 2 VCs. On veut toujours reporter l'index de la première page (paire)
             if isLandscape {
-                // Avec l'ordre inversé [leftVC, rightVC], on doit chercher le VC avec l'index pair
+                // En mode paysage avec logique livre arabe
+                // - Page 0 : seule
+                // - Paires : (1,2), (3,4), (5,6)... où impair=droite
+                // Reporter l'index de la page de DROITE (impair pour paires, 0 si couverture)
                 if let vcs = viewControllers {
                     for vc in vcs {
                         if let pageVC = vc as? PDFPageWithAnnotationViewController {
-                            // Trouver l'index pair (0, 2, 4, 6...)
-                            if pageVC.pageIndex % 2 == 0 {
+                            // Si c'est la page 0 ou une page impaire (page de droite)
+                            if pageVC.pageIndex == 0 || pageVC.pageIndex % 2 == 1 {
                                 currentPageIndex = pageVC.pageIndex
                                 onPageChanged?(pageVC.pageIndex)
                                 break
