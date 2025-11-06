@@ -124,11 +124,45 @@ struct QuranPDFView: View {
                 VStack {
                     // Barre supérieure
                     HStack {
-                        // Bouton pour effacer toutes les annotations (à gauche en RTL)
+                        // Bouton retour (à gauche en RTL)
                         Button(action: {
-                            drawings = [:]
+                            // Sauvegarder avant de quitter
                             if let pdfName = selectedPDF {
-                                DrawingsManager.shared.clearDrawings(for: pdfName)
+                                DrawingsManager.shared.saveDrawings(drawings, for: pdfName)
+                            }
+                            // Retourner à l'écran de sélection
+                            selectedPDF = nil
+                        }) {
+                            Image(systemName: "chevron.left.circle")
+                                .font(.title2)
+                                .foregroundColor(.primary)
+                                .padding()
+                                .background(Color(.systemBackground).opacity(0.8))
+                                .clipShape(Circle())
+                                .shadow(radius: 2)
+                        }
+
+                        // Bouton pour effacer les annotations des pages visibles
+                        Button(action: {
+                            // Obtenir les pages visibles via le coordinator
+                            if let coordinator = coordinatorRef,
+                               let vc = coordinator.viewController,
+                               let visibleVCs = vc.viewControllers {
+
+                                // Supprimer les annotations des pages visibles
+                                for visibleVC in visibleVCs {
+                                    if let pageVC = visibleVC as? PDFPageWithAnnotationViewController {
+                                        // Supprimer du dictionnaire
+                                        drawings.removeValue(forKey: pageVC.pageIndex)
+                                        // Effacer le canvas
+                                        pageVC.clearDrawing()
+                                    }
+                                }
+
+                                // Sauvegarder
+                                if let pdfName = selectedPDF {
+                                    DrawingsManager.shared.saveDrawings(drawings, for: pdfName)
+                                }
                             }
                         }) {
                             Image(systemName: "trash.circle")
@@ -141,7 +175,7 @@ struct QuranPDFView: View {
                         }
 
                         Spacer()
-                        
+
                         // Bouton mode annotation (à droite en RTL)
                         Button(action: {
                             withAnimation {
