@@ -25,7 +25,9 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
         self.isLandscape = isLandscape
 
         // Configuration du spine selon l'orientation
-        let spineLocation: UIPageViewController.SpineLocation = isLandscape ? .mid : .min
+        // En paysage: .mid (spine au milieu, livre ouvert)
+        // En portrait: .max (spine à droite pour l'arabe, curl depuis la gauche)
+        let spineLocation: UIPageViewController.SpineLocation = isLandscape ? .mid : .max
 
         // IMPORTANT: transitionStyle = .pageCurl pour l'animation de livre réaliste
         super.init(
@@ -68,29 +70,17 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
 
             // Créer 2 view controllers
             // IMPORTANT: Avec semanticContentAttribute = .forceRightToLeft:
-            // - Le PREMIER élément de l'array va à DROITE
-            // - Le DEUXIÈME élément de l'array va à GAUCHE
-            // Donc ordre = [page paire (droite), page impaire (gauche)]
+            // UIKit INVERSE l'ordre de l'array pour l'affichage RTL
+            // Pour avoir: [page droite | page gauche] à l'écran
+            // Il faut fournir: [page gauche, page droite] dans l'array
+            // Donc ordre = [page impaire (gauche), page paire (droite)]
             var controllers: [UIViewController] = []
 
             let rightPageIndex = adjustedIndex      // Page paire (0, 2, 4...) → droite
             let leftPageIndex = adjustedIndex + 1   // Page impaire (1, 3, 5...) → gauche
 
-            // PREMIER: Page de DROITE (index pair)
-            if let rightPage = pdfDocument.page(at: rightPageIndex) {
-                let rightVC = PDFPageWithAnnotationViewController(
-                    page: rightPage,
-                    pageIndex: rightPageIndex,
-                    drawing: drawings[rightPageIndex] ?? PKDrawing(),
-                    isAnnotationMode: isAnnotationMode
-                )
-                rightVC.onDrawingChanged = { [weak self] drawing in
-                    self?.drawings[rightPageIndex] = drawing
-                }
-                controllers.append(rightVC)
-            }
-
-            // DEUXIÈME: Page de GAUCHE (index impair)
+            // PREMIER dans l'array: Page de GAUCHE (index impair)
+            // Sera affichée à gauche après inversion RTL
             if leftPageIndex < pdfDocument.pageCount, let leftPage = pdfDocument.page(at: leftPageIndex) {
                 let leftVC = PDFPageWithAnnotationViewController(
                     page: leftPage,
@@ -102,6 +92,21 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
                     self?.drawings[leftPageIndex] = drawing
                 }
                 controllers.append(leftVC)
+            }
+
+            // DEUXIÈME dans l'array: Page de DROITE (index pair)
+            // Sera affichée à droite après inversion RTL
+            if let rightPage = pdfDocument.page(at: rightPageIndex) {
+                let rightVC = PDFPageWithAnnotationViewController(
+                    page: rightPage,
+                    pageIndex: rightPageIndex,
+                    drawing: drawings[rightPageIndex] ?? PKDrawing(),
+                    isAnnotationMode: isAnnotationMode
+                )
+                rightVC.onDrawingChanged = { [weak self] drawing in
+                    self?.drawings[rightPageIndex] = drawing
+                }
+                controllers.append(rightVC)
             }
 
             viewControllers = controllers
@@ -225,11 +230,18 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
         if completed {
             // En mode paysage, on a 2 VCs. On veut toujours reporter l'index de la première page (paire)
             if isLandscape {
-                if let firstVC = viewControllers?.first as? PDFPageWithAnnotationViewController {
-                    // firstVC est la page de droite (index pair)
-                    let pairStartIndex = (firstVC.pageIndex / 2) * 2
-                    currentPageIndex = pairStartIndex
-                    onPageChanged?(pairStartIndex)
+                // Avec l'ordre inversé [leftVC, rightVC], on doit chercher le VC avec l'index pair
+                if let vcs = viewControllers {
+                    for vc in vcs {
+                        if let pageVC = vc as? PDFPageWithAnnotationViewController {
+                            // Trouver l'index pair (0, 2, 4, 6...)
+                            if pageVC.pageIndex % 2 == 0 {
+                                currentPageIndex = pageVC.pageIndex
+                                onPageChanged?(pageVC.pageIndex)
+                                break
+                            }
+                        }
+                    }
                 }
             } else {
                 // En portrait, simple
