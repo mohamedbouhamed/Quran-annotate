@@ -29,7 +29,7 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
 
         // IMPORTANT: transitionStyle = .pageCurl pour l'animation de livre réaliste
         super.init(
-            transitionStyle: .pageCurl,  // ← C'est ici qu'on force .pageCurl !
+            transitionStyle: .pageCurl,
             navigationOrientation: .horizontal,
             options: [
                 .spineLocation: NSNumber(value: spineLocation.rawValue)
@@ -38,6 +38,9 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
 
         self.dataSource = self
         self.delegate = self
+
+        // Configuration RTL pour que le curl parte de la droite
+        self.view.semanticContentAttribute = .forceRightToLeft
     }
 
     required init?(coder: NSCoder) {
@@ -59,9 +62,49 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
         let viewControllers: [UIViewController]
 
         if isLandscape {
-            // En paysage : 2 pages
-            let adjustedIndex = (pageIndex % 2 == 0) ? pageIndex : pageIndex - 1
-            viewControllers = createViewControllers(startingAt: adjustedIndex, count: 2)
+            // En paysage : 2 pages côte à côte (comme un livre arabe ouvert)
+            // Ajuster pour être sur une page paire (début de paire)
+            let adjustedIndex = (pageIndex / 2) * 2  // Arrondir à 0, 2, 4, 6...
+
+            // Créer 2 view controllers
+            // IMPORTANT: Avec semanticContentAttribute = .forceRightToLeft:
+            // - Le PREMIER élément de l'array va à DROITE
+            // - Le DEUXIÈME élément de l'array va à GAUCHE
+            // Donc ordre = [page paire (droite), page impaire (gauche)]
+            var controllers: [UIViewController] = []
+
+            let rightPageIndex = adjustedIndex      // Page paire (0, 2, 4...) → droite
+            let leftPageIndex = adjustedIndex + 1   // Page impaire (1, 3, 5...) → gauche
+
+            // PREMIER: Page de DROITE (index pair)
+            if let rightPage = pdfDocument.page(at: rightPageIndex) {
+                let rightVC = PDFPageWithAnnotationViewController(
+                    page: rightPage,
+                    pageIndex: rightPageIndex,
+                    drawing: drawings[rightPageIndex] ?? PKDrawing(),
+                    isAnnotationMode: isAnnotationMode
+                )
+                rightVC.onDrawingChanged = { [weak self] drawing in
+                    self?.drawings[rightPageIndex] = drawing
+                }
+                controllers.append(rightVC)
+            }
+
+            // DEUXIÈME: Page de GAUCHE (index impair)
+            if leftPageIndex < pdfDocument.pageCount, let leftPage = pdfDocument.page(at: leftPageIndex) {
+                let leftVC = PDFPageWithAnnotationViewController(
+                    page: leftPage,
+                    pageIndex: leftPageIndex,
+                    drawing: drawings[leftPageIndex] ?? PKDrawing(),
+                    isAnnotationMode: isAnnotationMode
+                )
+                leftVC.onDrawingChanged = { [weak self] drawing in
+                    self?.drawings[leftPageIndex] = drawing
+                }
+                controllers.append(leftVC)
+            }
+
+            viewControllers = controllers
         } else {
             // En portrait : 1 page
             viewControllers = createViewControllers(startingAt: pageIndex, count: 1)
@@ -99,18 +142,23 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
         return controllers
     }
 
-    func updateOrientation(_ isLandscape: Bool) {
-        guard self.isLandscape != isLandscape else { return }
+    func updateOrientation(_ newIsLandscape: Bool) {
+        guard self.isLandscape != newIsLandscape else { return }
 
-        self.isLandscape = isLandscape
+        // Sauvegarder la page actuelle
+        let savedPage = currentPageIndex
 
-        // Recréer le pageViewController avec le bon spine location
-        let spineLocation: UIPageViewController.SpineLocation = isLandscape ? .mid : .min
+        // Mettre à jour l'orientation
+        self.isLandscape = newIsLandscape
 
-        // Note: On ne peut pas changer les options après init
-        // Il faudrait recréer complètement le view controller
-        // Pour l'instant, on reste sur la même page
-        goToPage(currentPageIndex, animated: false)
+        // Note: UIPageViewController ne permet pas de changer spineLocation après init
+        // On doit recréer complètement le controller
+        // Pour l'instant, on réaffiche juste la page avec le bon mode
+
+        // Petite pause pour éviter les conflits
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.goToPage(savedPage, animated: false)
+        }
     }
 
     // MARK: - UIPageViewControllerDataSource
@@ -119,35 +167,77 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
         guard let pageVC = viewController as? PDFPageWithAnnotationViewController,
               let pdfDocument = pdfDocument else { return nil }
 
-        let step = isLandscape ? 2 : 1
-        let previousIndex = pageVC.pageIndex - step
+        if isLandscape {
+            // En mode paysage avec 2 pages et spine au milieu
+            // UIPageViewController nous passe l'un des 2 VCs de la paire actuelle
+            // On doit identifier le début de la paire actuelle
+            let currentPairStart = (pageVC.pageIndex / 2) * 2  // Arrondir à la paire (0,2,4,6...)
 
-        guard previousIndex >= 0 else { return nil }
+            // Pour RTL: before = pages suivantes (avancer)
+            let nextPairStart = currentPairStart + 2
 
-        let controllers = createViewControllers(startingAt: previousIndex, count: 1)
-        return controllers.first
+            guard nextPairStart < pdfDocument.pageCount else { return nil }
+
+            // Retourner juste le premier VC de la paire (UIPageViewController demandera le 2ème automatiquement)
+            let controllers = createViewControllers(startingAt: nextPairStart, count: 1)
+            return controllers.first
+        } else {
+            // En portrait : une page à la fois
+            // Pour RTL: before = page suivante (avancer)
+            let nextIndex = pageVC.pageIndex + 1
+            guard nextIndex < pdfDocument.pageCount else { return nil }
+
+            let controllers = createViewControllers(startingAt: nextIndex, count: 1)
+            return controllers.first
+        }
     }
 
     func pageViewController(_ pageViewController: UIPageViewController, viewControllerAfter viewController: UIViewController) -> UIViewController? {
         guard let pageVC = viewController as? PDFPageWithAnnotationViewController,
               let pdfDocument = pdfDocument else { return nil }
 
-        let step = isLandscape ? 2 : 1
-        let nextIndex = pageVC.pageIndex + step
+        if isLandscape {
+            // En mode paysage avec 2 pages et spine au milieu
+            let currentPairStart = (pageVC.pageIndex / 2) * 2  // Arrondir à la paire (0,2,4,6...)
 
-        guard nextIndex < pdfDocument.pageCount else { return nil }
+            // Pour RTL: after = pages précédentes (reculer)
+            let previousPairStart = currentPairStart - 2
 
-        let controllers = createViewControllers(startingAt: nextIndex, count: 1)
-        return controllers.first
+            guard previousPairStart >= 0 else { return nil }
+
+            // Retourner juste le premier VC de la paire
+            let controllers = createViewControllers(startingAt: previousPairStart, count: 1)
+            return controllers.first
+        } else {
+            // En portrait : une page à la fois
+            // Pour RTL: after = page précédente (reculer)
+            let previousIndex = pageVC.pageIndex - 1
+            guard previousIndex >= 0 else { return nil }
+
+            let controllers = createViewControllers(startingAt: previousIndex, count: 1)
+            return controllers.first
+        }
     }
 
     // MARK: - UIPageViewControllerDelegate
 
     func pageViewController(_ pageViewController: UIPageViewController, didFinishAnimating finished: Bool, previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
-        if completed,
-           let visibleVC = viewControllers?.first as? PDFPageWithAnnotationViewController {
-            currentPageIndex = visibleVC.pageIndex
-            onPageChanged?(visibleVC.pageIndex)
+        if completed {
+            // En mode paysage, on a 2 VCs. On veut toujours reporter l'index de la première page (paire)
+            if isLandscape {
+                if let firstVC = viewControllers?.first as? PDFPageWithAnnotationViewController {
+                    // firstVC est la page de droite (index pair)
+                    let pairStartIndex = (firstVC.pageIndex / 2) * 2
+                    currentPageIndex = pairStartIndex
+                    onPageChanged?(pairStartIndex)
+                }
+            } else {
+                // En portrait, simple
+                if let visibleVC = viewControllers?.first as? PDFPageWithAnnotationViewController {
+                    currentPageIndex = visibleVC.pageIndex
+                    onPageChanged?(visibleVC.pageIndex)
+                }
+            }
         }
     }
 }
@@ -268,6 +358,8 @@ struct QuranPageCurlView: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> QuranPageCurlViewController {
         let vc = QuranPageCurlViewController(pdfDocument: pdfDocument, isLandscape: isLandscape)
+
+        // Restaurer les dessins existants
         vc.drawings = drawings
         vc.isAnnotationMode = isAnnotationMode
 
@@ -284,7 +376,9 @@ struct QuranPageCurlView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: QuranPageCurlViewController, context: Context) {
         uiViewController.isAnnotationMode = isAnnotationMode
-        uiViewController.updateOrientation(isLandscape)
+
+        // Synchroniser les dessins du VC vers le binding (pour sauvegarder)
+        drawings = uiViewController.drawings
 
         // Mettre à jour le mode annotation sur les pages visibles
         if let visibleVCs = uiViewController.viewControllers {
@@ -297,10 +391,11 @@ struct QuranPageCurlView: UIViewControllerRepresentable {
 
         // Mettre à jour la page si changée
         if uiViewController.currentPageIndex != currentPage {
-            uiViewController.goToPage(currentPage, animated: true)
+            uiViewController.goToPage(currentPage, animated: false)
         }
+    }
 
-        // Synchroniser les dessins
-        drawings = uiViewController.drawings
+    static func dismantleUIViewController(_ uiViewController: QuranPageCurlViewController, coordinator: ()) {
+        // Le binding drawings est déjà synchronisé via onPageChanged
     }
 }

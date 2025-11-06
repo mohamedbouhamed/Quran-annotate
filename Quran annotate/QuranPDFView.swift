@@ -109,6 +109,7 @@ struct QuranPDFView: View {
                     isLandscape: $viewModel.isLandscape,
                     drawings: $drawings
                 )
+                .id(viewModel.isLandscape) // Forcer recréation quand l'orientation change
                 .edgesIgnoringSafeArea(.all)
             } else {
                 // Vue de chargement
