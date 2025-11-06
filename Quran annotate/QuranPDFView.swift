@@ -9,84 +9,62 @@ import SwiftUI
 import PDFKit
 import PencilKit
 
-// UIViewRepresentable pour intégrer PDFView avec support complet des annotations
-struct PDFKitView: UIViewRepresentable {
-    let pdfDocument: PDFDocument
-    @Binding var currentPage: Int
-
-    class Coordinator: NSObject {
-        var parent: PDFKitView
-        var observer: NSObjectProtocol?
-
-        init(_ parent: PDFKitView) {
-            self.parent = parent
-        }
-
-        @objc func pageChanged(_ notification: Notification) {
-            guard let pdfView = notification.object as? PDFView,
-                  let currentPDFPage = pdfView.currentPage else {
-                return
-            }
-
-            let index = parent.pdfDocument.index(for: currentPDFPage)
-            DispatchQueue.main.async {
-                self.parent.currentPage = index
+// Gestionnaire de sauvegarde des annotations
+class DrawingsManager {
+    static let shared = DrawingsManager()
+    
+    private let userDefaults = UserDefaults.standard
+    private let drawingsKey = "quran_drawings"
+    
+    func saveDrawings(_ drawings: [Int: PKDrawing], for pdfName: String) {
+        var allDrawings = loadAllDrawings()
+        
+        // Convertir les PKDrawing en Data
+        var drawingsData: [String: Data] = [:]
+        for (pageIndex, drawing) in drawings {
+            if let data = try? drawing.dataRepresentation() {
+                drawingsData[String(pageIndex)] = data
             }
         }
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-
-    func makeUIView(context: Context) -> PDFView {
-        let pdfView = PDFView()
-
-        // Configuration de base
-        pdfView.document = pdfDocument
-        pdfView.autoScales = true
-        pdfView.displayMode = .singlePage
-        pdfView.displayDirection = .horizontal
-
-        // Configuration RTL (Right-to-Left pour l'arabe)
-        pdfView.displaysRTL = true
-
-        // Arrière-plan
-        pdfView.backgroundColor = UIColor.systemBackground
-
-        // Observer les changements de page
-        context.coordinator.observer = NotificationCenter.default.addObserver(
-            forName: .PDFViewPageChanged,
-            object: pdfView,
-            queue: .main
-        ) { notification in
-            context.coordinator.pageChanged(notification)
+        
+        allDrawings[pdfName] = drawingsData
+        
+        // Sauvegarder dans UserDefaults
+        if let encoded = try? JSONEncoder().encode(allDrawings) {
+            userDefaults.set(encoded, forKey: drawingsKey)
         }
-
-        // Aller à la page initiale
-        if let page = pdfDocument.page(at: currentPage) {
-            pdfView.go(to: page)
-        }
-
-        return pdfView
     }
-
-    func updateUIView(_ pdfView: PDFView, context: Context) {
-        // Mettre à jour le parent dans le coordinator
-        context.coordinator.parent = self
-
-        // Mettre à jour la page si elle a changé
-        if let page = pdfDocument.page(at: currentPage),
-           pdfView.currentPage != page {
-            UIView.animate(withDuration: 0.3) {
-                pdfView.go(to: page)
+    
+    func loadDrawings(for pdfName: String) -> [Int: PKDrawing] {
+        let allDrawings = loadAllDrawings()
+        
+        guard let drawingsData = allDrawings[pdfName] else { return [:] }
+        
+        var drawings: [Int: PKDrawing] = [:]
+        for (pageIndexString, data) in drawingsData {
+            if let pageIndex = Int(pageIndexString),
+               let drawing = try? PKDrawing(data: data) {
+                drawings[pageIndex] = drawing
             }
         }
+        
+        return drawings
     }
-
-    static func dismantleUIView(_ uiView: PDFView, coordinator: Coordinator) {
-        if let observer = coordinator.observer {
-            NotificationCenter.default.removeObserver(observer)
+    
+    private func loadAllDrawings() -> [String: [String: Data]] {
+        guard let data = userDefaults.data(forKey: drawingsKey),
+              let decoded = try? JSONDecoder().decode([String: [String: Data]].self, from: data) else {
+            return [:]
+        }
+        return decoded
+    }
+    
+    func clearDrawings(for pdfName: String) {
+        var allDrawings = loadAllDrawings()
+        allDrawings.removeValue(forKey: pdfName)
+        
+        if let encoded = try? JSONEncoder().encode(allDrawings) {
+            userDefaults.set(encoded, forKey: drawingsKey)
         }
     }
 }
@@ -96,9 +74,11 @@ struct QuranPDFView: View {
     @StateObject private var viewModel = QuranPDFViewModel()
     @State private var isAnnotationMode = false
     @State private var showPageSelector = false
-    @State private var drawings: [Int: PKDrawing] = [:] // Dessins par page
+    @State private var drawings: [Int: PKDrawing] = [:]
     @State private var selectedPDF: String? = nil
     @State private var showSplashScreen = true
+    @State private var orientationKey = UUID()
+    @Environment(\.scenePhase) private var scenePhase // Pour détecter quand l'app va en arrière-plan
 
     var body: some View {
         ZStack {
@@ -133,7 +113,7 @@ struct QuranPDFView: View {
                     isLandscape: $viewModel.isLandscape,
                     drawings: $drawings
                 )
-                .id(viewModel.isLandscape) // Forcer recréation quand l'orientation change
+                .id(orientationKey) // Forcer recréation quand l'orientation change
                 .edgesIgnoringSafeArea(.all)
             }
 
@@ -142,7 +122,25 @@ struct QuranPDFView: View {
                 VStack {
                     // Barre supérieure
                     HStack {
-                        // Bouton mode annotation
+                        // Bouton pour effacer toutes les annotations (à gauche en RTL)
+                        Button(action: {
+                            drawings = [:]
+                            if let pdfName = selectedPDF {
+                                DrawingsManager.shared.clearDrawings(for: pdfName)
+                            }
+                        }) {
+                            Image(systemName: "trash.circle")
+                                .font(.title2)
+                                .foregroundColor(.red)
+                                .padding()
+                                .background(Color(.systemBackground).opacity(0.8))
+                                .clipShape(Circle())
+                                .shadow(radius: 2)
+                        }
+
+                        Spacer()
+                        
+                        // Bouton mode annotation (à droite en RTL)
                         Button(action: {
                             withAnimation {
                                 isAnnotationMode.toggle()
@@ -156,8 +154,6 @@ struct QuranPDFView: View {
                                 .clipShape(Circle())
                                 .shadow(radius: 2)
                         }
-
-                        Spacer()
                     }
                     .padding()
 
@@ -167,8 +163,25 @@ struct QuranPDFView: View {
         }
         .onChange(of: selectedPDF) { oldValue, newValue in
             if let pdfName = newValue {
+                // Charger le PDF
                 viewModel.loadPDF(named: pdfName)
+                // Charger les annotations sauvegardées
+                drawings = DrawingsManager.shared.loadDrawings(for: pdfName)
             }
+        }
+        .onChange(of: drawings) { oldValue, newValue in
+            // Sauvegarder automatiquement les annotations
+            if let pdfName = selectedPDF {
+                DrawingsManager.shared.saveDrawings(newValue, for: pdfName)
+            }
+        }
+        .onChange(of: viewModel.isLandscape) { oldValue, newValue in
+            // Sauvegarder avant de changer d'orientation
+            if let pdfName = selectedPDF {
+                DrawingsManager.shared.saveDrawings(drawings, for: pdfName)
+            }
+            // Changer la clé pour forcer la recréation du view controller
+            orientationKey = UUID()
         }
         .sheet(isPresented: $showPageSelector) {
             PageSelectorView(
@@ -178,6 +191,12 @@ struct QuranPDFView: View {
             )
         }
         .environment(\.layoutDirection, .rightToLeft)
+        .onDisappear {
+            // Sauvegarder quand l'app se ferme
+            if let pdfName = selectedPDF {
+                DrawingsManager.shared.saveDrawings(drawings, for: pdfName)
+            }
+        }
     }
 }
 
