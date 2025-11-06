@@ -78,6 +78,7 @@ struct QuranPDFView: View {
     @State private var selectedPDF: String? = nil
     @State private var showSplashScreen = true
     @State private var orientationKey = UUID()
+    @State private var coordinatorRef: QuranPageCurlView.Coordinator? = nil
     @Environment(\.scenePhase) private var scenePhase // Pour détecter quand l'app va en arrière-plan
 
     var body: some View {
@@ -111,7 +112,8 @@ struct QuranPDFView: View {
                     currentPage: $viewModel.currentPage,
                     isAnnotationMode: $isAnnotationMode,
                     isLandscape: $viewModel.isLandscape,
-                    drawings: $drawings
+                    drawings: $drawings,
+                    coordinatorRef: $coordinatorRef
                 )
                 .id(orientationKey) // Forcer recréation quand l'orientation change
                 .edgesIgnoringSafeArea(.all)
@@ -176,10 +178,14 @@ struct QuranPDFView: View {
             }
         }
         .onChange(of: viewModel.isLandscape) { oldValue, newValue in
-            // Sauvegarder avant de changer d'orientation
+            // Sauvegarder les dessins visibles AVANT la rotation via le coordinator
+            coordinatorRef?.saveCurrentDrawings()
+
+            // Sauvegarder dans UserDefaults
             if let pdfName = selectedPDF {
                 DrawingsManager.shared.saveDrawings(drawings, for: pdfName)
             }
+
             // Changer la clé pour forcer la recréation du view controller
             orientationKey = UUID()
         }
