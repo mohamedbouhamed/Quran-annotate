@@ -1,0 +1,555 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		D0ACD7B52EBC98E300BE3A8E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D0ACD79F2EBC98E100BE3A8E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D0ACD7A62EBC98E100BE3A8E;
+			remoteInfo = "Quran annotate";
+		};
+		D0ACD7BF2EBC98E300BE3A8E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D0ACD79F2EBC98E100BE3A8E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D0ACD7A62EBC98E100BE3A8E;
+			remoteInfo = "Quran annotate";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		D0ACD7A72EBC98E100BE3A8E /* Quran annotate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Quran annotate.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D0ACD7B42EBC98E300BE3A8E /* Quran annotateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Quran annotateTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D0ACD7BE2EBC98E300BE3A8E /* Quran annotateUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Quran annotateUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		D0ACD7A92EBC98E100BE3A8E /* Quran annotate */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Quran annotate";
+			sourceTree = "<group>";
+		};
+		D0ACD7B72EBC98E300BE3A8E /* Quran annotateTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Quran annotateTests";
+			sourceTree = "<group>";
+		};
+		D0ACD7C12EBC98E300BE3A8E /* Quran annotateUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Quran annotateUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D0ACD7A42EBC98E100BE3A8E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D0ACD7B12EBC98E300BE3A8E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D0ACD7BB2EBC98E300BE3A8E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D0ACD79E2EBC98E100BE3A8E = {
+			isa = PBXGroup;
+			children = (
+				D0ACD7A92EBC98E100BE3A8E /* Quran annotate */,
+				D0ACD7B72EBC98E300BE3A8E /* Quran annotateTests */,
+				D0ACD7C12EBC98E300BE3A8E /* Quran annotateUITests */,
+				D0ACD7A82EBC98E100BE3A8E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D0ACD7A82EBC98E100BE3A8E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D0ACD7A72EBC98E100BE3A8E /* Quran annotate.app */,
+				D0ACD7B42EBC98E300BE3A8E /* Quran annotateTests.xctest */,
+				D0ACD7BE2EBC98E300BE3A8E /* Quran annotateUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D0ACD7A62EBC98E100BE3A8E /* Quran annotate */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D0ACD7C82EBC98E300BE3A8E /* Build configuration list for PBXNativeTarget "Quran annotate" */;
+			buildPhases = (
+				D0ACD7A32EBC98E100BE3A8E /* Sources */,
+				D0ACD7A42EBC98E100BE3A8E /* Frameworks */,
+				D0ACD7A52EBC98E100BE3A8E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D0ACD7A92EBC98E100BE3A8E /* Quran annotate */,
+			);
+			name = "Quran annotate";
+			packageProductDependencies = (
+			);
+			productName = "Quran annotate";
+			productReference = D0ACD7A72EBC98E100BE3A8E /* Quran annotate.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D0ACD7B32EBC98E300BE3A8E /* Quran annotateTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D0ACD7CB2EBC98E300BE3A8E /* Build configuration list for PBXNativeTarget "Quran annotateTests" */;
+			buildPhases = (
+				D0ACD7B02EBC98E300BE3A8E /* Sources */,
+				D0ACD7B12EBC98E300BE3A8E /* Frameworks */,
+				D0ACD7B22EBC98E300BE3A8E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D0ACD7B62EBC98E300BE3A8E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D0ACD7B72EBC98E300BE3A8E /* Quran annotateTests */,
+			);
+			name = "Quran annotateTests";
+			packageProductDependencies = (
+			);
+			productName = "Quran annotateTests";
+			productReference = D0ACD7B42EBC98E300BE3A8E /* Quran annotateTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D0ACD7BD2EBC98E300BE3A8E /* Quran annotateUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D0ACD7CE2EBC98E300BE3A8E /* Build configuration list for PBXNativeTarget "Quran annotateUITests" */;
+			buildPhases = (
+				D0ACD7BA2EBC98E300BE3A8E /* Sources */,
+				D0ACD7BB2EBC98E300BE3A8E /* Frameworks */,
+				D0ACD7BC2EBC98E300BE3A8E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D0ACD7C02EBC98E300BE3A8E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D0ACD7C12EBC98E300BE3A8E /* Quran annotateUITests */,
+			);
+			name = "Quran annotateUITests";
+			packageProductDependencies = (
+			);
+			productName = "Quran annotateUITests";
+			productReference = D0ACD7BE2EBC98E300BE3A8E /* Quran annotateUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D0ACD79F2EBC98E100BE3A8E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					D0ACD7A62EBC98E100BE3A8E = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					D0ACD7B32EBC98E300BE3A8E = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = D0ACD7A62EBC98E100BE3A8E;
+					};
+					D0ACD7BD2EBC98E300BE3A8E = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = D0ACD7A62EBC98E100BE3A8E;
+					};
+				};
+			};
+			buildConfigurationList = D0ACD7A22EBC98E100BE3A8E /* Build configuration list for PBXProject "Quran annotate" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D0ACD79E2EBC98E100BE3A8E;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D0ACD7A82EBC98E100BE3A8E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D0ACD7A62EBC98E100BE3A8E /* Quran annotate */,
+				D0ACD7B32EBC98E300BE3A8E /* Quran annotateTests */,
+				D0ACD7BD2EBC98E300BE3A8E /* Quran annotateUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D0ACD7A52EBC98E100BE3A8E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D0ACD7B22EBC98E300BE3A8E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D0ACD7BC2EBC98E300BE3A8E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D0ACD7A32EBC98E100BE3A8E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D0ACD7B02EBC98E300BE3A8E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D0ACD7BA2EBC98E300BE3A8E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D0ACD7B62EBC98E300BE3A8E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D0ACD7A62EBC98E100BE3A8E /* Quran annotate */;
+			targetProxy = D0ACD7B52EBC98E300BE3A8E /* PBXContainerItemProxy */;
+		};
+		D0ACD7C02EBC98E300BE3A8E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D0ACD7A62EBC98E100BE3A8E /* Quran annotate */;
+			targetProxy = D0ACD7BF2EBC98E300BE3A8E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		D0ACD7C62EBC98E300BE3A8E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		D0ACD7C72EBC98E300BE3A8E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D0ACD7C92EBC98E300BE3A8E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "mohamed.Quran-annotate";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D0ACD7CA2EBC98E300BE3A8E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "mohamed.Quran-annotate";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D0ACD7CC2EBC98E300BE3A8E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "mohamed.Quran-annotateTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Quran annotate.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Quran annotate";
+			};
+			name = Debug;
+		};
+		D0ACD7CD2EBC98E300BE3A8E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "mohamed.Quran-annotateTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Quran annotate.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Quran annotate";
+			};
+			name = Release;
+		};
+		D0ACD7CF2EBC98E300BE3A8E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "mohamed.Quran-annotateUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Quran annotate";
+			};
+			name = Debug;
+		};
+		D0ACD7D02EBC98E300BE3A8E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "mohamed.Quran-annotateUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Quran annotate";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D0ACD7A22EBC98E100BE3A8E /* Build configuration list for PBXProject "Quran annotate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0ACD7C62EBC98E300BE3A8E /* Debug */,
+				D0ACD7C72EBC98E300BE3A8E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D0ACD7C82EBC98E300BE3A8E /* Build configuration list for PBXNativeTarget "Quran annotate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0ACD7C92EBC98E300BE3A8E /* Debug */,
+				D0ACD7CA2EBC98E300BE3A8E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D0ACD7CB2EBC98E300BE3A8E /* Build configuration list for PBXNativeTarget "Quran annotateTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0ACD7CC2EBC98E300BE3A8E /* Debug */,
+				D0ACD7CD2EBC98E300BE3A8E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D0ACD7CE2EBC98E300BE3A8E /* Build configuration list for PBXNativeTarget "Quran annotateUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0ACD7CF2EBC98E300BE3A8E /* Debug */,
+				D0ACD7D02EBC98E300BE3A8E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D0ACD79F2EBC98E100BE3A8E /* Project object */;
+}
