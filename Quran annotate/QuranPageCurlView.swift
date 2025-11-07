@@ -451,7 +451,7 @@ class PDFPageWithAnnotationViewController: UIViewController {
         let doc = PDFDocument()
         doc.insert(page, at: 0)
         pdfView.document = doc
-        pdfView.autoScales = true
+        pdfView.autoScales = false  // Désactiver le redimensionnement automatique
         pdfView.displayMode = .singlePage
         pdfView.backgroundColor = .systemBackground
         pdfView.pageShadowsEnabled = false
@@ -500,6 +500,28 @@ class PDFPageWithAnnotationViewController: UIViewController {
             queue: .main
         ) { [weak self] _ in
             self?.saveDrawing()
+        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        // Calculer et fixer le zoom pour adapter la page à la vue
+        if let page = pdfView.document?.page(at: 0) {
+            let pageRect = page.bounds(for: .mediaBox)
+            let viewSize = pdfView.bounds.size
+
+            // Calculer le facteur de zoom pour adapter la page à la hauteur de la vue
+            let scaleHeight = viewSize.height / pageRect.height
+            let scaleWidth = viewSize.width / pageRect.width
+
+            // Utiliser le plus petit facteur pour que toute la page soit visible
+            let scale = min(scaleHeight, scaleWidth)
+
+            // Fixer le zoom (scaleFactor) de manière permanente
+            pdfView.scaleFactor = scale
+            pdfView.minScaleFactor = scale
+            pdfView.maxScaleFactor = scale
         }
     }
 
