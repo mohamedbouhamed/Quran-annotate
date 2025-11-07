@@ -90,9 +90,9 @@ class QuranPDFViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.pdfDocument = document
                 self.totalPages = document.pageCount
-                self.currentPage = 0
+                // NE PAS réinitialiser currentPage à 0 - garder la valeur existante pour la restauration
                 self.isLoading = false
-                print("✅ PDF chargé avec succès: \(self.totalPages) pages")
+                print("✅ PDF chargé avec succès: \(self.totalPages) pages, page actuelle: \(self.currentPage)")
             }
         }
     }

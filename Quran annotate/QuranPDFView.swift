@@ -240,16 +240,18 @@ struct QuranPDFView: View {
         }
         .onChange(of: selectedPDF) { oldValue, newValue in
             if let pdfName = newValue {
-                // Charger le PDF
-                viewModel.loadPDF(named: pdfName)
-                // Charger les annotations sauvegardées
-                drawings = DrawingsManager.shared.loadDrawings(for: pdfName)
-                // Restaurer la dernière page consultée (avec un délai pour éviter le crash)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    if let lastPage = DrawingsManager.shared.loadLastPage(for: pdfName) {
-                        viewModel.currentPage = lastPage
-                    }
+                // 1. Restaurer la dernière page AVANT de charger le PDF (pour éviter le flash)
+                if let lastPage = DrawingsManager.shared.loadLastPage(for: pdfName) {
+                    viewModel.currentPage = lastPage
+                } else {
+                    viewModel.currentPage = 0
                 }
+
+                // 2. Charger les annotations sauvegardées
+                drawings = DrawingsManager.shared.loadDrawings(for: pdfName)
+
+                // 3. Charger le PDF (utilisera currentPage déjà défini)
+                viewModel.loadPDF(named: pdfName)
             } else {
                 // Retour à l'écran de sélection
 
