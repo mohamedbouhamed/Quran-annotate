@@ -414,7 +414,7 @@ struct RTLProgressBar: View {
                         )
                         .position(
                             x: calculateThumbPosition(for: dragOffset ?? currentPage, in: barWidth),
-                            y: barHeight / 2
+                            y: geometry.size.height / 2
                         )
                         .animation(.easeInOut(duration: 0.15), value: dragOffset ?? currentPage)
                 }
