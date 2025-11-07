@@ -126,11 +126,26 @@ struct QuranPDFView: View {
                     HStack {
                         // Bouton retour (à gauche en RTL)
                         Button(action: {
-                            // Sauvegarder avant de quitter
+                            // 1. Sauvegarder les dessins visibles via le coordinator
+                            coordinatorRef?.saveCurrentDrawings()
+
+                            // 2. Sauvegarder dans UserDefaults
                             if let pdfName = selectedPDF {
                                 DrawingsManager.shared.saveDrawings(drawings, for: pdfName)
                             }
-                            // Retourner à l'écran de sélection
+
+                            // 3. Nettoyer le PKToolPicker
+                            if let coordinator = coordinatorRef,
+                               let vc = coordinator.viewController,
+                               let visibleVCs = vc.viewControllers {
+                                for visibleVC in visibleVCs {
+                                    if let pageVC = visibleVC as? PDFPageWithAnnotationViewController {
+                                        ToolPickerManager.shared.hideToolPicker(for: pageVC.canvasView)
+                                    }
+                                }
+                            }
+
+                            // 4. Retourner à l'écran de sélection
                             selectedPDF = nil
                         }) {
                             Image(systemName: "chevron.left.circle")
@@ -203,10 +218,33 @@ struct QuranPDFView: View {
                 viewModel.loadPDF(named: pdfName)
                 // Charger les annotations sauvegardées
                 drawings = DrawingsManager.shared.loadDrawings(for: pdfName)
+            } else {
+                // Retour à l'écran de sélection
+
+                // 1. Désactiver le mode annotation
+                isAnnotationMode = false
+
+                // 2. Nettoyer le PDF du viewModel
+                viewModel.pdfDocument = nil
+                viewModel.currentPage = 0
+                viewModel.totalPages = 0
+
+                // 3. Réinitialiser l'orientationKey pour forcer une nouvelle création
+                orientationKey = UUID()
+
+                // 4. Réinitialiser le coordinatorRef pour le prochain livre
+                coordinatorRef = nil
+
+                // 5. NE PAS vider drawings ici - ils seront écrasés lors du prochain loadDrawings()
+                // Cela évite de déclencher un onChange(of: drawings) qui pourrait causer des problèmes
+
+                // 6. Réinitialiser le flag d'outil par défaut pour le prochain livre
+                ToolPickerManager.shared.resetDefaultToolFlag()
             }
         }
         .onChange(of: drawings) { oldValue, newValue in
             // Sauvegarder automatiquement les annotations
+            // IMPORTANT : Ne sauvegarder que si on a un PDF sélectionné
             if let pdfName = selectedPDF {
                 DrawingsManager.shared.saveDrawings(newValue, for: pdfName)
             }
@@ -222,6 +260,42 @@ struct QuranPDFView: View {
 
             // Changer la clé pour forcer la recréation du view controller
             orientationKey = UUID()
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            switch newPhase {
+            case .background:
+                // App passe en arrière-plan : sauvegarder l'état de l'outil
+                if let coordinator = coordinatorRef,
+                   let vc = coordinator.viewController {
+                    ToolPickerManager.shared.saveToolState(vc.currentTool)
+                }
+
+                // Sauvegarder les dessins aussi
+                if let pdfName = selectedPDF {
+                    DrawingsManager.shared.saveDrawings(drawings, for: pdfName)
+                }
+
+            case .active:
+                // App revient en foreground : restaurer l'outil si disponible
+                if let coordinator = coordinatorRef,
+                   let vc = coordinator.viewController,
+                   let visibleVCs = vc.viewControllers {
+
+                    // Restaurer l'outil sauvegardé sur toutes les pages visibles
+                    for visibleVC in visibleVCs {
+                        if let pageVC = visibleVC as? PDFPageWithAnnotationViewController {
+                            ToolPickerManager.shared.restoreToolIfNeeded(for: pageVC.canvasView)
+                        }
+                    }
+                }
+
+            case .inactive:
+                // État transitoire, ne rien faire
+                break
+
+            @unknown default:
+                break
+            }
         }
         .sheet(isPresented: $showPageSelector) {
             PageSelectorView(

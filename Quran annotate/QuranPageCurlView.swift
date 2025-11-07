@@ -14,6 +14,11 @@ import PencilKit
 class ToolPickerManager {
     static let shared = ToolPickerManager()
     private(set) var toolPicker: PKToolPicker
+    private var hasSetDefaultTool = false
+
+    private let toolTypeKey = "SavedToolType"
+    private let toolColorKey = "SavedToolColor"
+    private let toolWidthKey = "SavedToolWidth"
 
     private init() {
         // Créer une instance unique de PKToolPicker
@@ -21,14 +26,96 @@ class ToolPickerManager {
     }
 
     func setupToolPicker(for canvasView: PKCanvasView, in window: UIWindow) {
+        // 1. Définir l'outil par défaut AVANT de rendre le picker visible
+        if !hasSetDefaultTool {
+            canvasView.tool = getDefaultTool()
+            hasSetDefaultTool = true
+        }
+
+        // 2. Ajouter le canvasView comme observateur
         toolPicker.addObserver(canvasView)
+
+        // 3. Rendre le picker visible et activer le canvas
         toolPicker.setVisible(true, forFirstResponder: canvasView)
         canvasView.becomeFirstResponder()
+    }
+
+    func getDefaultTool() -> PKTool {
+        // Outil par défaut : stylo noir, largeur moyenne
+        return PKInkingTool(.pen, color: .black, width: 3)
+    }
+
+    func saveToolState(_ tool: PKTool?) {
+        guard let inkingTool = tool as? PKInkingTool else { return }
+
+        let userDefaults = UserDefaults.standard
+
+        // Sauvegarder le type d'outil
+        let toolTypeString: String
+        switch inkingTool.inkType {
+        case .pen: toolTypeString = "pen"
+        case .pencil: toolTypeString = "pencil"
+        case .marker: toolTypeString = "marker"
+        case .monoline: toolTypeString = "monoline"
+        @unknown default: toolTypeString = "pen"
+        }
+        userDefaults.set(toolTypeString, forKey: toolTypeKey)
+
+        // Sauvegarder la couleur (composantes RGBA)
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        inkingTool.color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        userDefaults.set([red, green, blue, alpha], forKey: toolColorKey)
+
+        // Sauvegarder la largeur
+        userDefaults.set(inkingTool.width, forKey: toolWidthKey)
+
+        userDefaults.synchronize()
+    }
+
+    func loadSavedTool() -> PKTool? {
+        let userDefaults = UserDefaults.standard
+
+        guard let toolTypeString = userDefaults.string(forKey: toolTypeKey),
+              let colorComponents = userDefaults.array(forKey: toolColorKey) as? [CGFloat],
+              colorComponents.count == 4 else {
+            return nil
+        }
+
+        let width = userDefaults.double(forKey: toolWidthKey)
+        guard width > 0 else { return nil }
+
+        // Recréer la couleur
+        let color = UIColor(red: colorComponents[0], green: colorComponents[1],
+                           blue: colorComponents[2], alpha: colorComponents[3])
+
+        // Recréer le type d'outil
+        let inkType: PKInkingTool.InkType
+        switch toolTypeString {
+        case "pen": inkType = .pen
+        case "pencil": inkType = .pencil
+        case "marker": inkType = .marker
+        case "monoline": inkType = .monoline
+        default: inkType = .pen
+        }
+
+        return PKInkingTool(inkType, color: color, width: width)
+    }
+
+    func restoreToolIfNeeded(for canvasView: PKCanvasView) {
+        // Restaurer l'outil sauvegardé si disponible
+        if let savedTool = loadSavedTool() {
+            canvasView.tool = savedTool
+        }
     }
 
     func hideToolPicker(for canvasView: PKCanvasView) {
         toolPicker.setVisible(false, forFirstResponder: canvasView)
         canvasView.resignFirstResponder()
+    }
+
+    func resetDefaultToolFlag() {
+        // Réinitialiser pour permettre de définir l'outil par défaut au prochain livre
+        hasSetDefaultTool = false
     }
 }
 
@@ -149,9 +236,14 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
             self?.onDrawingsChanged?(self?.drawings ?? [:])
         }
 
-        // Appliquer l'outil actuel si disponible
+        // Appliquer l'outil actuel si disponible, sinon l'outil par défaut
         if let tool = currentTool {
             pageVC.setTool(tool)
+        } else if isAnnotationMode {
+            // Si en mode annotation mais pas d'outil défini, utiliser l'outil par défaut
+            let defaultTool = ToolPickerManager.shared.getDefaultTool()
+            pageVC.setTool(defaultTool)
+            currentTool = defaultTool
         }
 
         return pageVC
@@ -342,7 +434,7 @@ class PDFPageWithAnnotationViewController: UIViewController {
 
     let pageIndex: Int
     private let pdfView: PDFView
-    private let canvasView: PassthroughCanvasView
+    private(set) var canvasView: PassthroughCanvasView  // Exposé pour accès externe
     private var drawing: PKDrawing
     private var isAnnotationMode: Bool
     private var drawingObserver: NSObjectProtocol?
