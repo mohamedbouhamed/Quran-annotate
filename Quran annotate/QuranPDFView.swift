@@ -9,12 +9,13 @@ import SwiftUI
 import PDFKit
 import PencilKit
 
-// Gestionnaire de sauvegarde des annotations
+// Gestionnaire de sauvegarde des annotations et de la dernière page
 class DrawingsManager {
     static let shared = DrawingsManager()
-    
+
     private let userDefaults = UserDefaults.standard
     private let drawingsKey = "quran_drawings"
+    private let lastPageKey = "quran_last_pages"
     
     func saveDrawings(_ drawings: [Int: PKDrawing], for pdfName: String) {
         var allDrawings = loadAllDrawings()
@@ -62,10 +63,27 @@ class DrawingsManager {
     func clearDrawings(for pdfName: String) {
         var allDrawings = loadAllDrawings()
         allDrawings.removeValue(forKey: pdfName)
-        
+
         if let encoded = try? JSONEncoder().encode(allDrawings) {
             userDefaults.set(encoded, forKey: drawingsKey)
         }
+    }
+
+    // Sauvegarder la dernière page consultée
+    func saveLastPage(_ page: Int, for pdfName: String) {
+        var allLastPages = loadAllLastPages()
+        allLastPages[pdfName] = page
+        userDefaults.set(allLastPages, forKey: lastPageKey)
+    }
+
+    // Charger la dernière page consultée
+    func loadLastPage(for pdfName: String) -> Int? {
+        let allLastPages = loadAllLastPages()
+        return allLastPages[pdfName]
+    }
+
+    private func loadAllLastPages() -> [String: Int] {
+        return userDefaults.dictionary(forKey: lastPageKey) as? [String: Int] ?? [:]
     }
 }
 
@@ -121,7 +139,7 @@ struct QuranPDFView: View {
 
             // Overlay des contrôles (seulement si PDF chargé)
             if viewModel.pdfDocument != nil {
-                VStack {
+                VStack(spacing: 0) {
                     // Barre supérieure
                     HStack {
                         // Bouton retour (à gauche en RTL)
@@ -129,9 +147,10 @@ struct QuranPDFView: View {
                             // 1. Sauvegarder les dessins visibles via le coordinator
                             coordinatorRef?.saveCurrentDrawings()
 
-                            // 2. Sauvegarder dans UserDefaults
+                            // 2. Sauvegarder dans UserDefaults (annotations + page actuelle)
                             if let pdfName = selectedPDF {
                                 DrawingsManager.shared.saveDrawings(drawings, for: pdfName)
+                                DrawingsManager.shared.saveLastPage(viewModel.currentPage, for: pdfName)
                             }
 
                             // 3. Nettoyer le PKToolPicker
@@ -209,6 +228,13 @@ struct QuranPDFView: View {
                     .padding()
 
                     Spacer()
+
+                    // Barre de progression en bas (discrète)
+                    RTLProgressBar(
+                        currentPage: $viewModel.currentPage,
+                        totalPages: viewModel.totalPages
+                    )
+                    .padding(.bottom, 60)
                 }
             }
         }
@@ -218,27 +244,38 @@ struct QuranPDFView: View {
                 viewModel.loadPDF(named: pdfName)
                 // Charger les annotations sauvegardées
                 drawings = DrawingsManager.shared.loadDrawings(for: pdfName)
+                // Restaurer la dernière page consultée (avec un délai pour éviter le crash)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    if let lastPage = DrawingsManager.shared.loadLastPage(for: pdfName) {
+                        viewModel.currentPage = lastPage
+                    }
+                }
             } else {
                 // Retour à l'écran de sélection
 
-                // 1. Désactiver le mode annotation
+                // 1. Sauvegarder la dernière page avant de quitter
+                if let oldPdfName = oldValue {
+                    DrawingsManager.shared.saveLastPage(viewModel.currentPage, for: oldPdfName)
+                }
+
+                // 2. Désactiver le mode annotation
                 isAnnotationMode = false
 
-                // 2. Nettoyer le PDF du viewModel
+                // 3. Nettoyer le PDF du viewModel
                 viewModel.pdfDocument = nil
                 viewModel.currentPage = 0
                 viewModel.totalPages = 0
 
-                // 3. Réinitialiser l'orientationKey pour forcer une nouvelle création
+                // 4. Réinitialiser l'orientationKey pour forcer une nouvelle création
                 orientationKey = UUID()
 
-                // 4. Réinitialiser le coordinatorRef pour le prochain livre
+                // 5. Réinitialiser le coordinatorRef pour le prochain livre
                 coordinatorRef = nil
 
-                // 5. NE PAS vider drawings ici - ils seront écrasés lors du prochain loadDrawings()
+                // 6. NE PAS vider drawings ici - ils seront écrasés lors du prochain loadDrawings()
                 // Cela évite de déclencher un onChange(of: drawings) qui pourrait causer des problèmes
 
-                // 6. Réinitialiser le flag d'outil par défaut pour le prochain livre
+                // 7. Réinitialiser le flag d'outil par défaut pour le prochain livre
                 ToolPickerManager.shared.resetDefaultToolFlag()
             }
         }
@@ -247,6 +284,12 @@ struct QuranPDFView: View {
             // IMPORTANT : Ne sauvegarder que si on a un PDF sélectionné
             if let pdfName = selectedPDF {
                 DrawingsManager.shared.saveDrawings(newValue, for: pdfName)
+            }
+        }
+        .onChange(of: viewModel.currentPage) { oldValue, newValue in
+            // Sauvegarder automatiquement la page courante
+            if let pdfName = selectedPDF {
+                DrawingsManager.shared.saveLastPage(newValue, for: pdfName)
             }
         }
         .onChange(of: viewModel.isLandscape) { oldValue, newValue in
@@ -309,8 +352,73 @@ struct QuranPDFView: View {
             // Sauvegarder quand l'app se ferme
             if let pdfName = selectedPDF {
                 DrawingsManager.shared.saveDrawings(drawings, for: pdfName)
+                DrawingsManager.shared.saveLastPage(viewModel.currentPage, for: pdfName)
             }
         }
+    }
+}
+
+// Barre de progression RTL personnalisée (discrète mais visible)
+struct RTLProgressBar: View {
+    @Binding var currentPage: Int
+    let totalPages: Int
+
+    @State private var dragOffset: Int? = nil
+
+    var body: some View {
+        GeometryReader { geometry in
+            // ZStack pour barre de fond + progression
+            ZStack(alignment: .trailing) { // Alignement à droite pour RTL
+                // Fond (subtil mais visible)
+                Capsule()
+                    .fill(Color(.systemGray5).opacity(0.6))
+                    .frame(height: 5)
+
+                // Progression (pages restantes - se vide de droite à gauche)
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.accentColor.opacity(0.5),
+                                Color.accentColor.opacity(0.35)
+                            ],
+                            startPoint: .trailing,
+                            endPoint: .leading
+                        )
+                    )
+                    .frame(
+                        width: max(5, geometry.size.width * CGFloat(totalPages - (dragOffset ?? currentPage)) / CGFloat(totalPages)),
+                        height: 5
+                    )
+                    .animation(.easeInOut(duration: 0.15), value: dragOffset ?? currentPage)
+            }
+            // Zone de toucher plus grande pour faciliter l'interaction
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        // Calcul du pourcentage drag RTL (droite = début, gauche = fin)
+                        let relative = 1 - (value.location.x / geometry.size.width)
+                        let clampedRelative = min(max(relative, 0), 1)
+                        let page = min(max(Int(clampedRelative * CGFloat(totalPages)), 0), totalPages - 1)
+                        dragOffset = page
+                    }
+                    .onEnded { _ in
+                        if let page = dragOffset {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                currentPage = page
+                            }
+                        }
+                        dragOffset = nil
+                    }
+            )
+        }
+        .frame(height: 24)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 8)
+        .background(
+            Color.clear
+        )
     }
 }
 
