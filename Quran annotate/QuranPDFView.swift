@@ -229,12 +229,12 @@ struct QuranPDFView: View {
 
                     Spacer()
 
-                    // Barre de progression en bas (discrète)
+                    // Barre de progression en bas avec bouton circulaire
                     RTLProgressBar(
                         currentPage: $viewModel.currentPage,
                         totalPages: viewModel.totalPages
                     )
-                    .padding(.bottom, 60)
+                    .padding(.bottom, 5)
                 }
             }
         }
@@ -360,7 +360,7 @@ struct QuranPDFView: View {
     }
 }
 
-// Barre de progression RTL personnalisée (discrète mais visible)
+// Barre de progression RTL avec bouton circulaire glissant
 struct RTLProgressBar: View {
     @Binding var currentPage: Int
     let totalPages: Int
@@ -368,59 +368,96 @@ struct RTLProgressBar: View {
     @State private var dragOffset: Int? = nil
 
     var body: some View {
-        GeometryReader { geometry in
-            // ZStack pour barre de fond + progression
-            ZStack(alignment: .trailing) { // Alignement à droite pour RTL
-                // Fond (subtil mais visible)
-                Capsule()
-                    .fill(Color(.systemGray5).opacity(0.6))
-                    .frame(height: 5)
+        HStack(spacing: 0) {
+            Spacer()
+                .frame(width: 20)
 
-                // Progression (pages restantes - se vide de droite à gauche)
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.accentColor.opacity(0.5),
-                                Color.accentColor.opacity(0.35)
-                            ],
-                            startPoint: .trailing,
-                            endPoint: .leading
+            GeometryReader { geometry in
+                let barWidth = geometry.size.width
+                let barHeight: CGFloat = 18
+
+                ZStack {
+                    // Barre de fond (sobre et discrète)
+                    Capsule()
+                        .fill(Color(.systemGray6).opacity(0.5))
+                        .frame(width: barWidth, height: barHeight)
+
+                    // Barre de progression (se remplit de droite à gauche - sens arabe)
+                    HStack(spacing: 0) {
+                        Spacer()
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.accentColor.opacity(0.4),
+                                        Color.accentColor.opacity(0.3)
+                                    ],
+                                    startPoint: .trailing,
+                                    endPoint: .leading
+                                )
+                            )
+                            .frame(
+                                width: max(18, barWidth * CGFloat((dragOffset ?? currentPage) + 1) / CGFloat(totalPages)),
+                                height: barHeight
+                            )
+                            .animation(.easeInOut(duration: 0.15), value: dragOffset ?? currentPage)
+                    }
+
+                    // Bouton circulaire (thumb) glissant - positionné absolument
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 28, height: 28)
+                        .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color(.systemGray4), lineWidth: 1)
                         )
-                    )
-                    .frame(
-                        width: max(5, geometry.size.width * CGFloat(totalPages - (dragOffset ?? currentPage)) / CGFloat(totalPages)),
-                        height: 5
-                    )
-                    .animation(.easeInOut(duration: 0.15), value: dragOffset ?? currentPage)
-            }
-            // Zone de toucher plus grande pour faciliter l'interaction
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        // Calcul du pourcentage drag RTL (droite = début, gauche = fin)
-                        let relative = 1 - (value.location.x / geometry.size.width)
-                        let clampedRelative = min(max(relative, 0), 1)
-                        let page = min(max(Int(clampedRelative * CGFloat(totalPages)), 0), totalPages - 1)
-                        dragOffset = page
-                    }
-                    .onEnded { _ in
-                        if let page = dragOffset {
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                currentPage = page
-                            }
+                        .position(
+                            x: calculateThumbPosition(for: dragOffset ?? currentPage, in: barWidth),
+                            y: barHeight / 2
+                        )
+                        .animation(.easeInOut(duration: 0.15), value: dragOffset ?? currentPage)
+                }
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            // En LTR forcé : x=0 (gauche physique), x=barWidth (droite physique)
+                            // Pour RTL : touch à droite (x=barWidth) = page 0
+                            // Touch à gauche (x=0) = dernière page
+                            let relative = value.location.x / barWidth
+                            let clampedRelative = min(max(relative, 0), 1)
+                            // Inverser pour RTL
+                            let page = min(max(Int((1 - clampedRelative) * CGFloat(totalPages - 1)), 0), totalPages - 1)
+                            dragOffset = page
                         }
-                        dragOffset = nil
-                    }
-            )
+                        .onEnded { _ in
+                            if let page = dragOffset {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    currentPage = page
+                                }
+                            }
+                            dragOffset = nil
+                        }
+                )
+            }
+
+            Spacer()
+                .frame(width: 20)
         }
-        .frame(height: 24)
-        .padding(.horizontal, 24)
-        .padding(.vertical, 8)
-        .background(
-            Color.clear
-        )
+        .frame(height: 44)
+        .padding(.vertical, 4)
+        .environment(\.layoutDirection, .leftToRight)  // Forcer LTR pour contrôle total
+    }
+
+    // Calcule la position X du thumb en RTL (droite = début, gauche = fin)
+    private func calculateThumbPosition(for page: Int, in width: CGFloat) -> CGFloat {
+        let progress = CGFloat(page) / CGFloat(max(totalPages - 1, 1))
+
+        // En LTR forcé : x=0 (gauche), x=width (droite)
+        // Pour RTL (arabe) : page 0 doit être à droite = x=width
+        // Dernière page à gauche = x=0
+        return width * (1 - progress)
     }
 }
 
