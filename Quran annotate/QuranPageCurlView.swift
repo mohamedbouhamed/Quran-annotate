@@ -57,6 +57,7 @@ class ToolPickerManager {
         case .pencil: toolTypeString = "pencil"
         case .marker: toolTypeString = "marker"
         case .monoline: toolTypeString = "monoline"
+        case .fountainPen: toolTypeString = "fountainPen"
         @unknown default: toolTypeString = "pen"
         }
         userDefaults.set(toolTypeString, forKey: toolTypeKey)
@@ -474,6 +475,7 @@ class PDFPageWithAnnotationViewController: UIViewController {
         super.viewDidLoad()
 
         view.backgroundColor = .systemBackground
+        
 
         view.addSubview(pdfView)
         view.addSubview(canvasView)
@@ -661,10 +663,7 @@ struct QuranPageCurlView: UIViewControllerRepresentable {
             }
         }
 
-        vc.onDrawingsChanged = { updatedDrawings in
-            // Toujours mettre à jour de manière synchrone pour éviter les désynchronisations
-            drawings = updatedDrawings
-        }
+
 
         vc.goToPage(currentPage, animated: false)
 
