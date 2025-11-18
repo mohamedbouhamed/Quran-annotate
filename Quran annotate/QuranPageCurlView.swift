@@ -268,7 +268,7 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
         return controllers
     }
 
-    func saveCurrentDrawings() {
+    func saveCurrentDrawings(notifyChanges: Bool = true) {
         // Sauvegarder les dessins des pages actuellement visibles
         if let visibleVCs = viewControllers {
             for vc in visibleVCs {
@@ -277,7 +277,10 @@ class QuranPageCurlViewController: UIPageViewController, UIPageViewControllerDat
                     drawings[pageVC.pageIndex] = drawing
                 }
             }
-            onDrawingsChanged?(drawings)
+            // Only notify if explicitly requested (e.g., user action, not during sync)
+            if notifyChanges {
+                onDrawingsChanged?(drawings)
+            }
         }
     }
 
@@ -611,31 +614,32 @@ struct QuranPageCurlView: UIViewControllerRepresentable {
         var savedIsAnnotationMode: Bool = false
 
         func saveCurrentDrawings() {
-            if let vc = viewController, let visibleVCs = vc.viewControllers {
-                // Sauvegarder l'outil actuel
-                for visibleVC in visibleVCs {
-                    if let pageVC = visibleVC as? PDFPageWithAnnotationViewController {
-                        // Sauvegarder les dessins
-                        let drawing = pageVC.getCurrentDrawing()
-                        vc.drawings[pageVC.pageIndex] = drawing
+            guard let vc = viewController, let visibleVCs = vc.viewControllers else { return }
 
-                        // Sauvegarder l'outil et le mode annotation
-                        savedTool = pageVC.getCurrentTool()
-                        savedIsAnnotationMode = vc.isAnnotationMode
-                    }
+            // Sauvegarder les dessins des pages visibles dans le dictionnaire local
+            for visibleVC in visibleVCs {
+                if let pageVC = visibleVC as? PDFPageWithAnnotationViewController {
+                    // Sauvegarder les dessins
+                    let drawing = pageVC.getCurrentDrawing()
+                    vc.drawings[pageVC.pageIndex] = drawing
+
+                    // Sauvegarder l'outil et le mode annotation
+                    savedTool = pageVC.getCurrentTool()
+                    savedIsAnnotationMode = vc.isAnnotationMode
                 }
-                // Mettre à jour le binding de manière synchrone
-                drawings?.wrappedValue = vc.drawings
             }
+
+            // Mettre à jour le binding de manière synchrone
+            // This updates the SwiftUI state, but won't trigger saveCurrentDrawings again
+            // because we removed the call from updateUIViewController
+            drawings?.wrappedValue = vc.drawings
         }
     }
 
     func makeCoordinator() -> Coordinator {
         let coordinator = Coordinator()
-        // Exposer le coordinator au parent via le binding
-        DispatchQueue.main.async {
-            coordinatorRef = coordinator
-        }
+        // Don't update coordinatorRef here as it causes AttributeGraph cycles
+        // It will be set in makeUIViewController instead
         return coordinator
     }
 
@@ -646,13 +650,10 @@ struct QuranPageCurlView: UIViewControllerRepresentable {
         context.coordinator.viewController = vc
         context.coordinator.drawings = $drawings
 
-        // S'assurer que le coordinator est exposé
+        // Set coordinatorRef synchronously (only once during creation)
         if coordinatorRef == nil {
-            DispatchQueue.main.async {
-                coordinatorRef = context.coordinator
-            }
+            coordinatorRef = context.coordinator
         }
-
 
         vc.drawings = drawings
         vc.isAnnotationMode = isAnnotationMode
@@ -697,18 +698,36 @@ struct QuranPageCurlView: UIViewControllerRepresentable {
             return
         }
 
+        // Sync drawings from SwiftUI binding to UIKit layer
+        // BUT preserve any drawings for currently visible pages (they are the source of truth)
+        let visiblePageIndices = Set((uiViewController.viewControllers ?? []).compactMap {
+            ($0 as? PDFPageWithAnnotationViewController)?.pageIndex
+        })
+
         // Détecter si toutes les annotations ont été supprimées
         if drawings.isEmpty && !uiViewController.drawings.isEmpty {
             uiViewController.drawings = [:]
             uiViewController.clearVisibleAnnotations()
         } else {
-            uiViewController.drawings = drawings
+            // Update drawings from binding, but skip currently visible pages
+            for (pageIndex, drawing) in drawings {
+                if !visiblePageIndices.contains(pageIndex) {
+                    // Not currently visible, safe to update from binding
+                    uiViewController.drawings[pageIndex] = drawing
+                }
+            }
+            // For visible pages, the UIKit layer is the source of truth
+            // These will be synced back when the user navigates away
         }
 
         uiViewController.isAnnotationMode = isAnnotationMode
 
-        // Sauvegarder les dessins actuels
-        uiViewController.saveCurrentDrawings()
+        // DON'T call saveCurrentDrawings here - it creates a circular loop
+        // Drawings are saved when:
+        // 1. User actually draws (onDrawingChanged callback)
+        // 2. Before page navigation (goToPage)
+        // 3. Before orientation change (onChange in parent)
+        // 4. When leaving the view
 
         if let visibleVCs = uiViewController.viewControllers {
             for vc in visibleVCs {
@@ -724,6 +743,7 @@ struct QuranPageCurlView: UIViewControllerRepresentable {
     }
 
     static func dismantleUIViewController(_ uiViewController: QuranPageCurlViewController, coordinator: ()) {
-        uiViewController.saveCurrentDrawings()
+        // Save without triggering callbacks during teardown
+        uiViewController.saveCurrentDrawings(notifyChanges: false)
     }
 }
